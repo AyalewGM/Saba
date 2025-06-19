@@ -31,6 +31,15 @@ backend server and open this file in your browser. The page allows you to upload
 an audio file for transcription or enter text to generate speech without any
 build step because React is loaded from a CDN.
 
+## Architecture
+
+The project follows a minimal layered structure:
+
+- **Models** – wrappers around ML models in `app/models`.
+- **Services** – business logic in `app/services`.
+- **Controllers** – FastAPI routers located in `app/controllers`.
+- **main** – application setup that registers routers.
+
 ## Training
 
 You can fine-tune the ASR model on your own dataset using the provided

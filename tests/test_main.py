@@ -1,7 +1,7 @@
 import pytest
 from fastapi.testclient import TestClient
 
-from app.main import app, asr_model, tts_model
+from app.main import app, asr_service, tts_service
 
 client = TestClient(app)
 
@@ -24,7 +24,7 @@ def test_healthcheck():
 
 
 def test_transcribe(monkeypatch, tmp_path):
-    monkeypatch.setattr(asr_model, "transcribe", DummyASR().transcribe)
+    monkeypatch.setattr(asr_service, "transcribe", DummyASR().transcribe)
     audio_file = tmp_path / "sample.wav"
     audio_file.write_bytes(b"0" * 10)
     with audio_file.open("rb") as f:
@@ -34,7 +34,7 @@ def test_transcribe(monkeypatch, tmp_path):
 
 
 def test_synthesize(monkeypatch):
-    monkeypatch.setattr(tts_model, "synthesize", DummyTTS().synthesize)
+    monkeypatch.setattr(tts_service, "synthesize", DummyTTS().synthesize)
     response = client.post("/synthesize", data={"text": "hello"})
     assert response.status_code == 200
     assert response.headers["content-type"] == "audio/wav"
