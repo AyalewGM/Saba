@@ -1,6 +1,6 @@
 # saba
 
-saba is an Amharic speech and text application providing speech-to-text and text-to-speech services.
+Saba is an Amharic speech and text application providing speech-to-text and text-to-speech services.
 
 ## Development Setup
 
