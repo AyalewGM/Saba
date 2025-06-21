@@ -57,7 +57,7 @@ Saba/
 
 ---
 
-## 🚀 Development Setup
+## Development Setup
 
 To set up the project locally:
 
