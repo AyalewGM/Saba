@@ -42,7 +42,7 @@ Our goal is to create an intuitive, AI-powered voice interface in Amharic, enabl
 
 ---
 
-## 📁 Project Structure (Tentative)
+## Project Structure (Tentative)
 
 ```
 Saba/
