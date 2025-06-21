@@ -1,5 +1,4 @@
 # Saba
-
 Speech-to-Text and Text-to-Speech Platform for Amharic
 
 Saba is an open-source project focused on building a natural voice assistant that understands and speaks Amharic. Inspired by platforms like Amazon Alexa and Google Assistant, Saba aims to bridge the gap in voice technology for underrepresented languages—starting with Amharic.
@@ -54,8 +53,8 @@ This project is in its early stages. Contributions are welcome—especially from
 Feel free to reach out if you'd like to collaborate or support the mission.
 
 Creator: Ayalew Getachew Mersha  
-Email: [your-email@example.com]  
-LinkedIn: [Your LinkedIn] (optional)
+
+
 
 ## Development Setup
 
