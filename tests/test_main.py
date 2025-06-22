@@ -9,6 +9,9 @@ class DummyASR:
     async def transcribe(self, file):
         return "dummy transcript"
 
+    async def transcribe_bytes(self, data: bytes) -> str:
+        return "chunk"
+
 class DummyTTS:
     async def synthesize(self, text: str) -> str:
         from tempfile import NamedTemporaryFile
@@ -38,3 +41,11 @@ def test_synthesize(monkeypatch):
     response = client.post("/synthesize", data={"text": "hello"})
     assert response.status_code == 200
     assert response.headers["content-type"] == "audio/wav"
+
+
+def test_transcribe_ws(monkeypatch):
+    monkeypatch.setattr(asr_service, "transcribe_bytes", DummyASR().transcribe_bytes)
+    with client.websocket_connect("/transcribe_ws") as websocket:
+        websocket.send_bytes(b"data")
+        text = websocket.receive_text()
+        assert text == "chunk"
