@@ -19,7 +19,10 @@
     function App() {
       const [transcript, setTranscript] = React.useState('');
       const [audioUrl, setAudioUrl] = React.useState(null);
+      const [recording, setRecording] = React.useState(false);
       const audioRef = React.useRef(null);
+      const wsRef = React.useRef(null);
+      const recorderRef = React.useRef(null);
 
       async function transcribe() {
         const input = document.getElementById('audioInput');
@@ -36,6 +39,39 @@
         } else {
           alert('Transcription failed');
         }
+      }
+
+      async function startRecording() {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const ws = new WebSocket(`ws://${window.location.host}/transcribe_ws`);
+        ws.onmessage = (e) => setTranscript((t) => t + e.data);
+        wsRef.current = ws;
+        const recorder = new MediaRecorder(stream);
+        recorder.ondataavailable = (e) => {
+          if (ws.readyState === WebSocket.OPEN) {
+            ws.send(e.data);
+          }
+        };
+        recorder.start(250);
+        recorderRef.current = recorder;
+        setRecording(true);
+      }
+
+      function stopRecording() {
+        recorderRef.current && recorderRef.current.stop();
+        wsRef.current && wsRef.current.close();
+        setRecording(false);
+      }
+
+      function download() {
+        if (!transcript) return;
+        const blob = new Blob([transcript], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'transcript.txt';
+        a.click();
+        URL.revokeObjectURL(url);
       }
 
       async function synthesize() {
@@ -61,6 +97,10 @@
             <h2>Speech to Text</h2>
             <input type="file" id="audioInput" accept="audio/*" />
             <button onClick={transcribe}>Transcribe</button>
+            <button onClick={recording ? stopRecording : startRecording}>
+              {recording ? 'Stop Recording' : 'Start Recording'}
+            </button>
+            <button onClick={download} disabled={!transcript}>Download Transcript</button>
             <pre>{transcript}</pre>
           </div>
           <div className="section">

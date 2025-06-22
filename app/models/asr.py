@@ -20,3 +20,11 @@ class ASRModel:
             tmp.flush()
             result = self.pipe(tmp.name)
         return result.get("text", "")
+
+    async def transcribe_bytes(self, data: bytes) -> str:
+        """Transcribe raw audio bytes."""
+        with NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
+            tmp.write(data)
+            tmp.flush()
+            result = self.pipe(tmp.name)
+        return result.get("text", "")
