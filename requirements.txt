@@ -7,7 +7,6 @@ pydub
 soundfile
 ffmpeg-python
 python-multipart
-TTS
-coqpit
+coqui-tts
 pytest
 httpx
