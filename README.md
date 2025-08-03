@@ -116,12 +116,11 @@ This project is licensed under the [MIT License](LICENSE).
 ## Contact
 If you’re interested in collaborating or supporting this project, feel free to reach out:
 - **Creator:** Ayalew Getachew Mersha
-- **Email:** [your-email@example.com]
+- **Email:** ayalew.mersha@gmail.com
 - **GitHub:** [AyalewGM](https://github.com/AyalewGM)
-- **LinkedIn:** [Your LinkedIn] (optional)
+- **LinkedIn:** [LinkedIn] ([optional](https://www.linkedin.com/in/ayalew-mersha/)
 
 ---
 
 ## Frontend Demo
 A simple React-based interface is provided in `frontend/index.html`. Start the backend server and open this file in your browser. You can upload audio for transcription or enter text for speech generation. React is loaded from a CDN—no build step required.
-```
