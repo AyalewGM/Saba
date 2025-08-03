@@ -3,14 +3,104 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Saba - Amharic Speech App</title>
+  <title>Saba - Amharic Voice Assistant</title>
   <script crossorigin src="https://unpkg.com/react@17/umd/react.development.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
   <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
   <style>
-    body { font-family: Arial, sans-serif; margin: 2em; }
-    .section { margin-bottom: 2em; }
-    textarea { width: 100%; }
+    body { 
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+      margin: 0; 
+      padding: 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      color: #333;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 15px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      overflow: hidden;
+    }
+    .header {
+      background: linear-gradient(45deg, #1e3c72 0%, #2a5298 100%);
+      color: white;
+      padding: 30px;
+      text-align: center;
+    }
+    .header h1 { margin: 0; font-size: 2.5em; }
+    .header p { margin: 10px 0 0 0; opacity: 0.9; }
+    .content { padding: 30px; }
+    .section { 
+      margin-bottom: 40px; 
+      padding: 25px;
+      border: 1px solid #e0e0e0;
+      border-radius: 10px;
+      background: #fafafa;
+    }
+    .section h2 { 
+      margin-top: 0; 
+      color: #2a5298;
+      border-bottom: 2px solid #2a5298;
+      padding-bottom: 10px;
+    }
+    textarea { 
+      width: 100%; 
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: inherit;
+    }
+    button {
+      background: #2a5298;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      margin: 5px;
+      transition: background 0.3s;
+    }
+    button:hover { background: #1e3c72; }
+    button:disabled { 
+      background: #ccc; 
+      cursor: not-allowed; 
+    }
+    .recording { background: #e74c3c !important; }
+    .wake-active { background: #27ae60 !important; }
+    pre { 
+      background: #f8f8f8; 
+      padding: 15px; 
+      border-radius: 8px;
+      white-space: pre-wrap;
+      border-left: 4px solid #2a5298;
+    }
+    .status-bar {
+      background: #34495e;
+      color: white;
+      padding: 15px;
+      text-align: center;
+      font-weight: bold;
+    }
+    .status-indicator {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      margin-right: 8px;
+    }
+    .status-listening { background: #27ae60; }
+    .status-idle { background: #95a5a6; }
+    .status-conversation { background: #3498db; }
+    .amharic-text {
+      font-family: 'Noto Sans Ethiopic', 'Ethiopic WashRa SemiBold', 'Ethiopic Yebse', serif;
+      font-size: 1.1em;
+      line-height: 1.6;
+    }
   </style>
 </head>
 <body>
@@ -20,9 +110,29 @@
       const [transcript, setTranscript] = React.useState('');
       const [audioUrl, setAudioUrl] = React.useState(null);
       const [recording, setRecording] = React.useState(false);
+      const [voiceStatus, setVoiceStatus] = React.useState({});
+      const [conversationActive, setConversationActive] = React.useState(false);
+      const [chatHistory, setChatHistory] = React.useState([]);
       const audioRef = React.useRef(null);
       const wsRef = React.useRef(null);
       const recorderRef = React.useRef(null);
+
+      React.useEffect(() => {
+        fetchVoiceStatus();
+      }, []);
+
+      async function fetchVoiceStatus() {
+        try {
+          const res = await fetch('/api/voice/status');
+          if (res.ok) {
+            const status = await res.json();
+            setVoiceStatus(status);
+            setConversationActive(status.conversation_active);
+          }
+        } catch (e) {
+          console.error('Failed to fetch voice status:', e);
+        }
+      }
 
       async function transcribe() {
         const input = document.getElementById('audioInput');
@@ -32,7 +142,7 @@
         }
         const formData = new FormData();
         formData.append('file', input.files[0]);
-        const res = await fetch('/transcribe', { method: 'POST', body: formData });
+        const res = await fetch('/api/transcribe', { method: 'POST', body: formData });
         if (res.ok) {
           const data = await res.json();
           setTranscript(data.transcript);
@@ -43,7 +153,7 @@
 
       async function startRecording() {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        const ws = new WebSocket(`ws://${window.location.host}/transcribe_ws`);
+        const ws = new WebSocket(`ws://${window.location.host}/api/transcribe_ws`);
         ws.onmessage = (e) => setTranscript((t) => t + e.data);
         wsRef.current = ws;
         const recorder = new MediaRecorder(stream);
@@ -79,7 +189,7 @@
         if (!text) { alert('Please enter text'); return; }
         const formData = new FormData();
         formData.append('text', text);
-        const res = await fetch('/synthesize', { method: 'POST', body: formData });
+        const res = await fetch('/api/synthesize', { method: 'POST', body: formData });
         if (res.ok) {
           const blob = await res.blob();
           const url = URL.createObjectURL(blob);
@@ -90,24 +200,148 @@
         }
       }
 
+      async function sendVoiceChat() {
+        const text = document.getElementById('chatText').value;
+        if (!text) { alert('Please enter text'); return; }
+        
+        const formData = new FormData();
+        formData.append('text', text);
+        const res = await fetch('/api/voice/chat', { method: 'POST', body: formData });
+        
+        if (res.ok) {
+          const data = await res.json();
+          setChatHistory(prev => [...prev, 
+            { type: 'user', text: text },
+            { type: 'assistant', text: data.response || data.message }
+          ]);
+          setConversationActive(data.conversation_active);
+          document.getElementById('chatText').value = '';
+          
+          // Synthesize response if available
+          if (data.response) {
+            const ttsFormData = new FormData();
+            ttsFormData.append('text', data.response);
+            const ttsRes = await fetch('/api/synthesize', { method: 'POST', body: ttsFormData });
+            if (ttsRes.ok) {
+              const blob = await ttsRes.blob();
+              const url = URL.createObjectURL(blob);
+              setAudioUrl(url);
+              setTimeout(() => { audioRef.current && audioRef.current.play(); }, 100);
+            }
+          }
+        } else {
+          alert('Voice chat failed');
+        }
+      }
+
+      async function triggerWakeWord() {
+        const res = await fetch('/api/voice/wake', { method: 'POST' });
+        if (res.ok) {
+          setConversationActive(true);
+          setChatHistory(prev => [...prev, 
+            { type: 'system', text: 'Wake word detected - conversation started' }
+          ]);
+        }
+      }
+
+      async function endConversation() {
+        const res = await fetch('/api/voice/end', { method: 'POST' });
+        if (res.ok) {
+          setConversationActive(false);
+          setChatHistory(prev => [...prev, 
+            { type: 'system', text: 'Conversation ended' }
+          ]);
+        }
+      }
+
+      const getStatusIndicator = () => {
+        if (conversationActive) return 'status-conversation';
+        if (voiceStatus.is_listening) return 'status-listening';
+        return 'status-idle';
+      };
+
+      const getStatusText = () => {
+        if (conversationActive) return 'Conversation Active';
+        if (voiceStatus.is_listening) return 'Listening for Wake Word';
+        return 'Idle';
+      };
+
       return (
-        <div>
-          <h1>Saba</h1>
-          <div className="section">
-            <h2>Speech to Text</h2>
-            <input type="file" id="audioInput" accept="audio/*" />
-            <button onClick={transcribe}>Transcribe</button>
-            <button onClick={recording ? stopRecording : startRecording}>
-              {recording ? 'Stop Recording' : 'Start Recording'}
-            </button>
-            <button onClick={download} disabled={!transcript}>Download Transcript</button>
-            <pre>{transcript}</pre>
+        <div className="container">
+          <div className="header">
+            <h1>ሳባ - Saba</h1>
+            <p>Amharic Voice Assistant | የአማርኛ ድምጽ ረዳት</p>
           </div>
-          <div className="section">
-            <h2>Text to Speech</h2>
-            <textarea id="ttsText" rows="4" placeholder="Enter text..."></textarea><br/>
-            <button onClick={synthesize}>Synthesize</button>
-            {audioUrl && <audio id="ttsAudio" ref={audioRef} controls src={audioUrl}></audio>}
+          
+          <div className="status-bar">
+            <span className={`status-indicator ${getStatusIndicator()}`}></span>
+            {getStatusText()} | Wake Word: {voiceStatus.wake_word || 'ሳባ'}
+          </div>
+
+          <div className="content">
+            {/* Voice Assistant Chat */}
+            <div className="section">
+              <h2>🗣️ Voice Assistant Chat</h2>
+              <div style={{marginBottom: '15px'}}>
+                <textarea id="chatText" rows="3" placeholder="Type your message or say 'ሳባ' to start..."></textarea><br/>
+                <button onClick={sendVoiceChat}>Send Message</button>
+                <button onClick={triggerWakeWord} className={conversationActive ? "wake-active" : ""}>
+                  {conversationActive ? "Wake Word Active" : "Trigger Wake Word"}
+                </button>
+                <button onClick={endConversation} disabled={!conversationActive}>End Conversation</button>
+              </div>
+              
+              <div style={{background: '#f8f9fa', padding: '15px', borderRadius: '8px', maxHeight: '300px', overflowY: 'auto'}}>
+                {chatHistory.length === 0 ? (
+                  <p className="amharic-text" style={{fontStyle: 'italic', color: '#666'}}>
+                    Say "ሳባ" (Saba) to start a conversation...
+                  </p>
+                ) : (
+                  chatHistory.map((msg, i) => (
+                    <div key={i} style={{margin: '10px 0', padding: '8px', borderRadius: '5px', 
+                      background: msg.type === 'user' ? '#e3f2fd' : msg.type === 'assistant' ? '#f1f8e9' : '#fff3e0'}}>
+                      <strong>{msg.type === 'user' ? 'You' : msg.type === 'assistant' ? 'Saba' : 'System'}:</strong>
+                      <span className="amharic-text"> {msg.text}</span>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {/* Speech to Text */}
+            <div className="section">
+              <h2>🎤 Speech to Text</h2>
+              <input type="file" id="audioInput" accept="audio/*" />
+              <button onClick={transcribe}>Transcribe File</button>
+              <button onClick={recording ? stopRecording : startRecording} 
+                      className={recording ? "recording" : ""}>
+                {recording ? 'Stop Recording' : 'Start Live Recording'}
+              </button>
+              <button onClick={download} disabled={!transcript}>Download Transcript</button>
+              <pre className="amharic-text">{transcript || 'No transcription yet...'}</pre>
+            </div>
+
+            {/* Text to Speech */}
+            <div className="section">
+              <h2>🔊 Text to Speech</h2>
+              <textarea id="ttsText" rows="4" placeholder="Enter text in Amharic or English... | በአማርኛ ወይም በእንግሊዝኛ ጽሑፍ ያስገቡ..."></textarea><br/>
+              <button onClick={synthesize}>Synthesize Speech</button>
+              {audioUrl && <audio id="ttsAudio" ref={audioRef} controls src={audioUrl} style={{marginLeft: '10px'}}></audio>}
+            </div>
+
+            {/* Available Skills */}
+            <div className="section">
+              <h2>🎯 Available Skills</h2>
+              <div className="amharic-text">
+                {voiceStatus.available_skills ? voiceStatus.available_skills.map((skill, i) => (
+                  <div key={i} style={{margin: '10px 0', padding: '10px', background: '#f0f0f0', borderRadius: '5px'}}>
+                    <strong>{skill.name}:</strong> {skill.description}
+                  </div>
+                )) : (
+                  <p>Loading skills...</p>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       );
