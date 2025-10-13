@@ -116,9 +116,9 @@ This project is licensed under the [MIT License](LICENSE).
 ## Contact
 If you’re interested in collaborating or supporting this project, feel free to reach out:
 - **Creator:** Ayalew Getachew Mersha
-- **Email:** [your-email@example.com]
+- **Email:** ayalew.mersha@gmail.com
 - **GitHub:** [AyalewGM](https://github.com/AyalewGM)
-- **LinkedIn:** [Your LinkedIn] (optional)
+- **LinkedIn:** https://www.linkedin.com/in/ayalew-mersha/
 
 ---
 
